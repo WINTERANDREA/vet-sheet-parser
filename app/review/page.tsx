@@ -1,5 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Select } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { AlertCircle, CheckCircle2, FileText, Save, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Owner = {
   fullName?: string;
@@ -32,10 +41,8 @@ type Pet = {
 };
 type Parsed = { owners: Owner[]; pets: Pet[]; raw?: string };
 
-function warnStyle(v?: string | number | null | undefined) {
-  const bad =
-    v === undefined || v === null || (typeof v === "string" && v.trim() === "");
-  return bad ? { background: "#fff4d6" } : undefined;
+function isEmpty(v?: string | number | null | undefined) {
+  return v === undefined || v === null || (typeof v === "string" && v.trim() === "");
 }
 
 export default function ReviewPage() {
@@ -60,9 +67,8 @@ export default function ReviewPage() {
       cache: "no-store",
     })
       .then(async (r) => {
-        const text = await r.text(); // <-- leggiamo sempre testo
+        const text = await r.text();
         if (!r.ok) {
-          // server ha risposto con JSON o string semplice: mostriamo info utili
           let payload: any = null;
           try {
             payload = JSON.parse(text);
@@ -70,7 +76,6 @@ export default function ReviewPage() {
           const msg = payload?.error || text || `HTTP ${r.status}`;
           throw new Error(`Parse API error: ${msg}`);
         }
-        // risposta OK: deve essere JSON
         try {
           return JSON.parse(text);
         } catch (e) {
@@ -121,426 +126,400 @@ export default function ReviewPage() {
   };
 
   return (
-    <main
-      style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}
-    >
-      <aside style={{ borderRight: "1px solid #ddd", paddingRight: 12 }}>
-        <h2 style={{ fontSize: 16, marginBottom: 8 }}>File in /data</h2>
-        <ul
-          style={{
-            listStyle: "none",
-            padding: 0,
-            margin: 0,
-            maxHeight: "70vh",
-            overflow: "auto",
-          }}
-        >
-          {files.map((f) => (
-            <li key={f.name}>
-              <button
-                onClick={() => setSelected(f.name)}
-                style={{
-                  background: selected === f.name ? "#eef" : "transparent",
-                  border: 0,
-                  width: "100%",
-                  textAlign: "left",
-                  padding: "6px 8px",
-                  borderRadius: 6,
-                  cursor: "pointer",
-                }}
-                title={`${f.size} bytes`}
-              >
-                {f.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+    <main className="grid lg:grid-cols-[280px_1fr] gap-6">
+      {/* Sidebar */}
+      <aside className="space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              File in /data
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1 max-h-[70vh] overflow-auto pr-2">
+              {files.map((f) => (
+                <button
+                  key={f.name}
+                  onClick={() => setSelected(f.name)}
+                  className={cn(
+                    "w-full text-left px-3 py-2 rounded-md text-sm transition-colors",
+                    selected === f.name
+                      ? "bg-primary text-primary-foreground"
+                      : "hover:bg-slate-100"
+                  )}
+                  title={`${f.size} bytes`}
+                >
+                  {f.name}
+                </button>
+              ))}
+              {files.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-4">
+                  Nessun file disponibile
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </aside>
 
-      <section>
-        {!selected && <p>Seleziona un file a sinistra.</p>}
-        {loading && <p>Caricamento…</p>}
+      {/* Main content */}
+      <section className="space-y-6">
+        {!selected && (
+          <Card>
+            <CardContent className="pt-6">
+              <p className="text-center text-muted-foreground">
+                Seleziona un file dalla lista a sinistra per iniziare
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {loading && (
+          <Card>
+            <CardContent className="pt-6 flex items-center justify-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>Caricamento in corso...</span>
+            </CardContent>
+          </Card>
+        )}
 
         {parsed && (
-          <div
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}
-          >
-            {/* Orig */}
-            <div>
-              <h3>Originale</h3>
-              <pre
-                style={{
-                  whiteSpace: "pre-wrap",
-                  background: "#fafafa",
-                  padding: 12,
-                  borderRadius: 8,
-                  border: "1px solid #eee",
-                  maxHeight: "70vh",
-                  overflow: "auto",
-                }}
-              >
-                {raw}
-              </pre>
-            </div>
+          <div className="grid lg:grid-cols-2 gap-6">
+            {/* Original Text */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Testo Originale</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <pre className="text-xs whitespace-pre-wrap bg-slate-50 p-4 rounded-md border max-h-[70vh] overflow-auto">
+                  {raw}
+                </pre>
+              </CardContent>
+            </Card>
 
-            {/* Editable DB fields */}
-            <div>
-              <h3>Campi DB (editabili)</h3>
-              <div
-                style={{
-                  display: "grid",
-                  gap: 12,
-                  maxHeight: "70vh",
-                  overflow: "auto",
-                }}
-              >
+            {/* Editable Fields */}
+            <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Campi DB (editabili)</h3>
+                {message && (
+                  <Badge variant={message.includes('✔') ? "default" : "destructive"}>
+                    {message}
+                  </Badge>
+                )}
+              </div>
+
+              <div className="space-y-6 max-h-[70vh] overflow-auto pr-2">
                 {/* Owners */}
-                <fieldset
-                  style={{
-                    border: "1px solid #eee",
-                    borderRadius: 8,
-                    padding: 12,
-                  }}
-                >
-                  <legend style={{ padding: "0 6px" }}>
-                    Proprietari ({parsed.owners.length})
-                  </legend>
-                  {parsed.owners.map((o, oi) => (
-                    <div
-                      key={oi}
-                      style={{
-                        border: "1px solid #f0f0f0",
-                        borderRadius: 8,
-                        padding: 8,
-                        marginBottom: 8,
-                      }}
-                    >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">
+                      Proprietari ({parsed.owners.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {parsed.owners.map((o, oi) => (
                       <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 8,
-                        }}
+                        key={oi}
+                        className="border rounded-lg p-4 space-y-3 bg-slate-50"
                       >
-                        <label>
-                          Nome completo
-                          <input
-                            value={o.fullName ?? ""}
-                            onChange={(e) =>
-                              update(["owners", oi, "fullName"], e.target.value)
-                            }
-                            style={{ width: "100%", ...warnStyle(o.fullName) }}
-                          />
-                        </label>
-                        <label>
-                          Codice fiscale
-                          <input
-                            value={o.taxCode ?? ""}
-                            onChange={(e) =>
-                              update(["owners", oi, "taxCode"], e.target.value)
-                            }
-                            style={{ width: "100%" }}
-                          />
-                        </label>
-                        <label>
-                          Email (separate da virgola)
-                          <input
-                            value={(o.emails ?? []).join(", ")}
-                            onChange={(e) =>
-                              update(
-                                ["owners", oi, "emails"],
-                                e.target.value
-                                  .split(",")
-                                  .map((s) => s.trim())
-                                  .filter(Boolean)
-                              )
-                            }
-                            style={{ width: "100%" }}
-                          />
-                        </label>
-                        <label>
-                          Telefoni (separati da virgola)
-                          <input
-                            value={(o.phones ?? []).join(", ")}
-                            onChange={(e) =>
-                              update(
-                                ["owners", oi, "phones"],
-                                e.target.value
-                                  .split(",")
-                                  .map((s) => s.trim())
-                                  .filter(Boolean)
-                              )
-                            }
-                            style={{ width: "100%" }}
-                          />
-                        </label>
-                        <label style={{ gridColumn: "1 / -1" }}>
-                          Indirizzo
-                          <input
-                            value={o.address ?? ""}
-                            onChange={(e) =>
-                              update(["owners", oi, "address"], e.target.value)
-                            }
-                            style={{ width: "100%" }}
-                          />
-                        </label>
-                        <label>
-                          Ruolo
-                          <select
-                            value={o.role || "secondary"}
-                            onChange={(e) =>
-                              update(
-                                ["owners", oi, "role"],
-                                e.target.value as any
-                              )
-                            }
-                          >
-                            <option value='primary'>primary</option>
-                            <option value='secondary'>secondary</option>
-                          </select>
-                        </label>
-                        <label>
-                          Start
-                          <input
-                            placeholder='YYYY-MM-DD'
-                            value={o.startDate ?? ""}
-                            onChange={(e) =>
-                              update(
-                                ["owners", oi, "startDate"],
-                                e.target.value
-                              )
-                            }
-                          />
-                        </label>
-                        <label>
-                          End
-                          <input
-                            placeholder='YYYY-MM-DD'
-                            value={o.endDate ?? ""}
-                            onChange={(e) =>
-                              update(["owners", oi, "endDate"], e.target.value)
-                            }
-                          />
-                        </label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Nome completo</Label>
+                            <Input
+                              value={o.fullName ?? ""}
+                              onChange={(e) =>
+                                update(["owners", oi, "fullName"], e.target.value)
+                              }
+                              className={cn(
+                                isEmpty(o.fullName) && "bg-amber-50 border-amber-300"
+                              )}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Codice fiscale</Label>
+                            <Input
+                              value={o.taxCode ?? ""}
+                              onChange={(e) =>
+                                update(["owners", oi, "taxCode"], e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Email (separate da virgola)</Label>
+                            <Input
+                              value={(o.emails ?? []).join(", ")}
+                              onChange={(e) =>
+                                update(
+                                  ["owners", oi, "emails"],
+                                  e.target.value
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Telefoni (separati da virgola)</Label>
+                            <Input
+                              value={(o.phones ?? []).join(", ")}
+                              onChange={(e) =>
+                                update(
+                                  ["owners", oi, "phones"],
+                                  e.target.value
+                                    .split(",")
+                                    .map((s) => s.trim())
+                                    .filter(Boolean)
+                                )
+                              }
+                            />
+                          </div>
+                          <div className="col-span-2 space-y-1">
+                            <Label className="text-xs">Indirizzo</Label>
+                            <Input
+                              value={o.address ?? ""}
+                              onChange={(e) =>
+                                update(["owners", oi, "address"], e.target.value)
+                              }
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Ruolo</Label>
+                            <Select
+                              value={o.role || "secondary"}
+                              onChange={(e) =>
+                                update(
+                                  ["owners", oi, "role"],
+                                  e.target.value as any
+                                )
+                              }
+                            >
+                              <option value="primary">primary</option>
+                              <option value="secondary">secondary</option>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Start Date</Label>
+                            <Input
+                              placeholder="YYYY-MM-DD"
+                              value={o.startDate ?? ""}
+                              onChange={(e) =>
+                                update(
+                                  ["owners", oi, "startDate"],
+                                  e.target.value
+                                )
+                              }
+                            />
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </fieldset>
+                    ))}
+                  </CardContent>
+                </Card>
 
                 {/* Pets + Visits */}
                 {parsed.pets?.map((pet, pi) => (
-                  <fieldset
-                    key={pi}
-                    style={{
-                      border: "1px solid #eee",
-                      borderRadius: 8,
-                      padding: 12,
-                    }}
-                  >
-                    <legend>Animale {pi + 1}</legend>
-
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(6, 1fr)",
-                        gap: 8,
-                      }}
-                    >
-                      <label style={{ gridColumn: "span 2" }}>
-                        Nome
-                        <input
-                          value={pet.name ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "name"], e.target.value)
-                          }
-                          style={{ width: "100%", ...warnStyle(pet.name) }}
-                        />
-                      </label>
-                      <label>
-                        Specie
-                        <input
-                          value={pet.species ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "species"], e.target.value)
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </label>
-                      <label>
-                        Sesso
-                        <input
-                          value={pet.sex ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "sex"], e.target.value)
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </label>
-                      <label>
-                        Razza
-                        <input
-                          value={pet.breed ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "breed"], e.target.value)
-                          }
-                          style={{ width: "100%" }}
-                        />
-                      </label>
-                      <label>
-                        Data nascita
-                        <input
-                          value={pet.dob ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "dob"], e.target.value)
-                          }
-                          style={{ width: "100%" }}
-                          placeholder='YYYY-MM o YYYY-MM-DD'
-                        />
-                      </label>
-                      <label style={{ gridColumn: "span 2" }}>
-                        Colore
-                        <input
-                          value={pet.color ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "color"], e.target.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        Microchip
-                        <input
-                          value={pet.microchip ?? ""}
-                          onChange={(e) =>
-                            update(["pets", pi, "microchip"], e.target.value)
-                          }
-                        />
-                      </label>
-                      <label>
-                        Sterilizzato/a
-                        <select
-                          value={String(!!pet.sterilized)}
-                          onChange={(e) =>
-                            update(
-                              ["pets", pi, "sterilized"],
-                              e.target.value === "true"
-                            )
-                          }
-                        >
-                          <option value='true'>Sì</option>
-                          <option value='false'>No</option>
-                        </select>
-                      </label>
-                    </div>
-
-                    {pet.visits?.map((v, vi) => (
-                      <details key={vi} style={{ marginTop: 8 }} open>
-                        <summary>
-                          Visita {vi + 1} — {v.visitedAt || "senza data"}
-                        </summary>
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 8,
-                            padding: 8,
-                            border: "1px solid #f0f0f0",
-                            borderRadius: 8,
-                          }}
-                        >
-                          <label>
-                            Data visita (YYYY-MM-DD)
-                            <input
-                              value={v.visitedAt ?? ""}
-                              onChange={(e) =>
-                                update(
-                                  ["pets", pi, "visits", vi, "visitedAt"],
-                                  e.target.value
-                                )
-                              }
-                              style={{
-                                width: "100%",
-                                ...warnStyle(v.visitedAt),
-                              }}
-                            />
-                          </label>
-                          <div style={{ gridColumn: "span 2" }}>
-                            <label>
-                              Descrizione (clinica/terapie/comunicazioni)
-                            </label>
-                            <textarea
-                              value={v.description ?? ""}
-                              onChange={(e) =>
-                                update(
-                                  ["pets", pi, "visits", vi, "description"],
-                                  e.target.value
-                                )
-                              }
-                              style={{
-                                width: "100%",
-                                height: 100,
-                                ...warnStyle(v.description),
-                              }}
-                            />
-                          </div>
-                          <div style={{ gridColumn: "span 2" }}>
-                            <label>Esami (lab/imaging/test)</label>
-                            <textarea
-                              value={v.examsText ?? ""}
-                              onChange={(e) =>
-                                update(
-                                  ["pets", pi, "visits", vi, "examsText"],
-                                  e.target.value
-                                )
-                              }
-                              style={{ width: "100%", height: 120 }}
-                            />
-                          </div>
-                          <div style={{ gridColumn: "span 2" }}>
-                            <label>Prescrizioni / Terapie</label>
-                            <textarea
-                              value={v.prescriptionsText ?? ""}
-                              onChange={(e) =>
-                                update(
-                                  [
-                                    "pets",
-                                    pi,
-                                    "visits",
-                                    vi,
-                                    "prescriptionsText",
-                                  ],
-                                  e.target.value
-                                )
-                              }
-                              style={{ width: "100%", height: 100 }}
-                            />
-                          </div>
-                          <details style={{ gridColumn: "span 2" }}>
-                            <summary>Raw visit text</summary>
-                            <pre style={{ whiteSpace: "pre-wrap" }}>
-                              {v.rawText || ""}
-                            </pre>
-                          </details>
+                  <Card key={pi}>
+                    <CardHeader>
+                      <CardTitle className="text-base">Animale {pi + 1}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-3 gap-3">
+                        <div className="col-span-2 space-y-1">
+                          <Label className="text-xs">Nome</Label>
+                          <Input
+                            value={pet.name ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "name"], e.target.value)
+                            }
+                            className={cn(
+                              isEmpty(pet.name) && "bg-amber-50 border-amber-300"
+                            )}
+                          />
                         </div>
-                      </details>
-                    ))}
-                  </fieldset>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Specie</Label>
+                          <Input
+                            value={pet.species ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "species"], e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sesso</Label>
+                          <Input
+                            value={pet.sex ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "sex"], e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Razza</Label>
+                          <Input
+                            value={pet.breed ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "breed"], e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Data nascita</Label>
+                          <Input
+                            value={pet.dob ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "dob"], e.target.value)
+                            }
+                            placeholder="YYYY-MM-DD"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Microchip</Label>
+                          <Input
+                            value={pet.microchip ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "microchip"], e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Colore</Label>
+                          <Input
+                            value={pet.color ?? ""}
+                            onChange={(e) =>
+                              update(["pets", pi, "color"], e.target.value)
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <Label className="text-xs">Sterilizzato/a</Label>
+                          <Select
+                            value={String(!!pet.sterilized)}
+                            onChange={(e) =>
+                              update(
+                                ["pets", pi, "sterilized"],
+                                e.target.value === "true"
+                              )
+                            }
+                          >
+                            <option value="true">Sì</option>
+                            <option value="false">No</option>
+                          </Select>
+                        </div>
+                      </div>
+
+                      {/* Visits */}
+                      <div className="space-y-3">
+                        {pet.visits?.map((v, vi) => (
+                          <details key={vi} className="group" open>
+                            <summary className="cursor-pointer p-3 bg-slate-100 rounded-md hover:bg-slate-200 transition-colors font-medium text-sm">
+                              Visita {vi + 1} — {v.visitedAt || "senza data"}
+                            </summary>
+                            <div className="mt-2 space-y-3 p-3 border rounded-md">
+                              <div className="space-y-1">
+                                <Label className="text-xs">Data visita (YYYY-MM-DD)</Label>
+                                <Input
+                                  value={v.visitedAt ?? ""}
+                                  onChange={(e) =>
+                                    update(
+                                      ["pets", pi, "visits", vi, "visitedAt"],
+                                      e.target.value
+                                    )
+                                  }
+                                  className={cn(
+                                    isEmpty(v.visitedAt) && "bg-amber-50 border-amber-300"
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Descrizione (clinica/terapie/comunicazioni)</Label>
+                                <Textarea
+                                  value={v.description ?? ""}
+                                  onChange={(e) =>
+                                    update(
+                                      ["pets", pi, "visits", vi, "description"],
+                                      e.target.value
+                                    )
+                                  }
+                                  className={cn(
+                                    "min-h-[100px]",
+                                    isEmpty(v.description) && "bg-amber-50 border-amber-300"
+                                  )}
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Esami (lab/imaging/test)</Label>
+                                <Textarea
+                                  value={v.examsText ?? ""}
+                                  onChange={(e) =>
+                                    update(
+                                      ["pets", pi, "visits", vi, "examsText"],
+                                      e.target.value
+                                    )
+                                  }
+                                  className="min-h-[120px]"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-xs">Prescrizioni / Terapie</Label>
+                                <Textarea
+                                  value={v.prescriptionsText ?? ""}
+                                  onChange={(e) =>
+                                    update(
+                                      [
+                                        "pets",
+                                        pi,
+                                        "visits",
+                                        vi,
+                                        "prescriptionsText",
+                                      ],
+                                      e.target.value
+                                    )
+                                  }
+                                  className="min-h-[100px]"
+                                />
+                              </div>
+                              <details className="text-xs">
+                                <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
+                                  Raw visit text
+                                </summary>
+                                <pre className="mt-2 whitespace-pre-wrap bg-slate-50 p-2 rounded border text-xs">
+                                  {v.rawText || ""}
+                                </pre>
+                              </details>
+                            </div>
+                          </details>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
                 ))}
 
-                <div style={{ display: "flex", gap: 8 }}>
-                  <button
-                    onClick={saveToDB}
-                    disabled={saving}
-                    style={{
-                      padding: "10px 14px",
-                      borderRadius: 8,
-                      border: "1px solid #ddd",
-                      cursor: "pointer",
-                    }}
-                  >
-                    {saving ? "Salvataggio…" : "Conferma e salva su DB"}
-                  </button>
-                  {message && <span>{message}</span>}
-                </div>
+                {/* Save Button */}
+                <Card>
+                  <CardContent className="pt-6">
+                    <Button
+                      onClick={saveToDB}
+                      disabled={saving}
+                      className="w-full"
+                      size="lg"
+                    >
+                      {saving ? (
+                        <>
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          Salvataggio in corso...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4 mr-2" />
+                          Conferma e salva su DB
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
               </div>
             </div>
           </div>

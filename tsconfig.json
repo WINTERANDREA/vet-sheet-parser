@@ -1,10 +1,7 @@
 {
   "compilerOptions": {
     "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM"
-    ],
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
@@ -13,12 +10,11 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "@lib/*": [
-        "lib/*"
-      ],
-      "@parser/*": [
-        "parser/*"
-      ]
+      "@/*": ["./*"],
+      "@lib/*": ["lib/*"],
+      "@parser/*": ["parser/*"],
+      "@/components/*": ["components/*"],
+      "@/lib/*": ["lib/*"]
     },
     "allowJs": true,
     "noEmit": true,
@@ -31,14 +27,6 @@
       }
     ]
   },
-  "include": [
-    "app",
-    "lib",
-    "parser",
-    "scripts",
-    ".next/types/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules"
-  ]
+  "include": ["app", "lib", "parser", "scripts", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
 }

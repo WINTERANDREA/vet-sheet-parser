@@ -74,8 +74,8 @@ async function upsertOne(filePath: string) {
       });
       const want = new Set(ow.emails.map((e) => e.toLowerCase()));
       const toDelete = existing
-        .filter((e) => !want.has(e.email.toLowerCase()))
-        .map((e) => e.id);
+        .filter((e: any) => !want.has(e.email.toLowerCase()))
+        .map((e: any) => e.id);
       if (toDelete.length)
         await prisma.ownerEmail.deleteMany({ where: { id: { in: toDelete } } });
       for (const em of ow.emails) {
@@ -92,8 +92,8 @@ async function upsertOne(filePath: string) {
       });
       const want = new Set(ow.phones.map((e) => e));
       const toDelete = existing
-        .filter((e) => !want.has(e.phone))
-        .map((e) => e.id);
+        .filter((e: any) => !want.has(e.phone))
+        .map((e: any) => e.id);
       if (toDelete.length)
         await prisma.ownerPhone.deleteMany({ where: { id: { in: toDelete } } });
       for (const ph of ow.phones) {
