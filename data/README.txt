@@ -1,0 +1,1 @@
+Metti qui i file .txt delle schede.

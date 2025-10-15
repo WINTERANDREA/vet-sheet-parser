@@ -1,0 +1,9 @@
+node_modules
+.next
+dist
+pnpm-lock.yaml
+.env
+dev.db
+*.sqlite
+*.log
+.DS_Store

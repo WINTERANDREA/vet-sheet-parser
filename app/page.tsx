@@ -1,0 +1,1 @@
+export default function Home(){return(<main>Vai su <a href="/review">Review</a> o <a href="/records">Records</a>.</main>)}
