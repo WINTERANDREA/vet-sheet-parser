@@ -7,3 +7,4 @@ dev.db
 *.sqlite
 *.log
 .DS_Store
+data

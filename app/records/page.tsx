@@ -9,6 +9,7 @@ type OwnerRow = {
   petsCount: number;
   visitsCount: number;
   linksCount: number;
+  lastVisitAt?: string | null;
 };
 
 export default function Records() {
@@ -37,6 +38,8 @@ export default function Records() {
     }`.toLowerCase();
     return s.includes(q.toLowerCase());
   });
+
+  const fmt = (iso?: string | null) => (iso ? iso.slice(0, 10) : "—");
 
   return (
     <main>
@@ -78,6 +81,7 @@ export default function Records() {
               <th>Indirizzo</th>
               <th>Animali</th>
               <th>Visite</th>
+              <th>Ultima visita</th>
               <th>Link</th>
               <th></th>
             </tr>
@@ -90,6 +94,7 @@ export default function Records() {
                 <td>{r.address || "—"}</td>
                 <td style={{ textAlign: "center" }}>{r.petsCount}</td>
                 <td style={{ textAlign: "center" }}>{r.visitsCount}</td>
+                <td style={{ textAlign: "center" }}>{fmt(r.lastVisitAt)}</td>
                 <td style={{ textAlign: "center" }}>{r.linksCount}</td>
                 <td style={{ textAlign: "right" }}>
                   <a href={`/records/${r.id}`}>Apri</a>
@@ -99,7 +104,7 @@ export default function Records() {
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   style={{ padding: 12, textAlign: "center", color: "#777" }}
                 >
                   Nessun risultato

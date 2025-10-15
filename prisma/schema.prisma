@@ -8,80 +8,80 @@ datasource db {
 }
 
 model Owner {
-  id       String       @id @default(cuid())
-  fullName String?
-  taxCode  String?      @unique
-  address  String?
-  emails   OwnerEmail[]
-  phones   OwnerPhone[]
-  pets     Pet[]        @relation("CurrentOwner")
-  links    PetOwner[]   @relation("OwnerLinks")
+  id        String        @id @default(cuid())
+  fullName  String?
+  taxCode   String?       @unique
+  address   String?
+
+  emails    OwnerEmail[]
+  phones    OwnerPhone[]
+  petLinks  PetOwner[]
 
   @@index([fullName])
 }
 
 model OwnerEmail {
   id      String @id @default(cuid())
-  email   String
-  owner   Owner  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
+  email   String
+
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@unique([ownerId, email])
 }
 
 model OwnerPhone {
   id      String @id @default(cuid())
-  phone   String
-  owner   Owner  @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   ownerId String
+  phone   String
+
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
 
   @@unique([ownerId, phone])
 }
 
 model Pet {
-  id         String   @id @default(cuid())
-  owner      Owner?   @relation("CurrentOwner", fields: [ownerId], references: [id], onDelete: SetNull)
-  ownerId    String? // current primary owner
-  name       String?
-  species    String?
-  breed      String?
-  sex        String?
-  dob        String?
-  color      String?
-  sterilized Boolean?
-  microchip  String?
+  id          String     @id @default(cuid())
+  name        String?
+  species     String?
+  breed       String?
+  sex         String?
+  dob         DateTime?
+  color       String?
+  microchip   String?    @unique
+  sterilized  Boolean?
 
-  visits Visit[]
-  owners PetOwner[] @relation("PetLinks")
+  owners      PetOwner[]
+  visits      Visit[]
 
-  @@index([ownerId, name])
-  @@index([microchip])
+  @@index([name])
 }
 
 model PetOwner {
-  id        String  @id @default(cuid())
-  pet       Pet     @relation("PetLinks", fields: [petId], references: [id], onDelete: Cascade)
-  petId     String
-  owner     Owner   @relation("OwnerLinks", fields: [ownerId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
   ownerId   String
-  role      String // "primary" | "secondary"
-  startDate String?
-  endDate   String?
-  note      String?
+  petId     String
+  role      String    // 'primary' | 'secondary'
+  startDate DateTime?
+  endDate   DateTime?
 
-  @@index([petId, ownerId])
+  owner Owner @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  pet   Pet   @relation(fields: [petId], references: [id], onDelete: Cascade)
+
   @@index([ownerId])
+  @@index([petId])
+  @@index([role])
 }
 
 model Visit {
-  id                String   @id @default(cuid())
-  pet               Pet      @relation(fields: [petId], references: [id], onDelete: Cascade)
+  id                String    @id @default(cuid())
   petId             String
-  visitedAt         String? // ISO (YYYY-MM-DD)
+  visitedAt         DateTime?
   description       String
   examsText         String?
   prescriptionsText String?
-  rawText           String?
-  attachments       String?
-  createdAt         DateTime @default(now())
+
+  pet Pet @relation(fields: [petId], references: [id], onDelete: Cascade)
+
+  @@index([visitedAt])
 }
